@@ -15,8 +15,8 @@ https://undate.vercel.app/add
 → Same deploy. The /add page is the try-it path: paste any LinkedIn + public Instagram → live scrape → profile → auto-dated against all 25 → rankings update.
 
 ## GitHub URL (must be public)
-https://github.com/YOU/undate
-→ `git init && git add -A && git commit -m "undate: agentic dating harness" && gh repo create undate --public --source=. --push`
+https://github.com/DebadityaHait/undate
+→ Done: pushed to https://github.com/DebadityaHait/undate (public).
 
 ## Overall explanation (≤200 chars — 196 chars)
 Undate: each person gets an agent that reads only their LinkedIn+Instagram, writes a needs/hobbies profile, dates every other agent live, and ranks best fits with transcripts.
