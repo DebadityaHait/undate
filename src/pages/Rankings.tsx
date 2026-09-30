@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../lib/store';
+import Avatar from '../components/Avatar';
 
 export default function Rankings() {
   const { people, getRanks, introductions } = useStore();
@@ -29,7 +30,7 @@ export default function Rankings() {
             const top = getRanks(p.id)[0];
             return (
               <button key={p.id} onClick={() => setSel(p.id)} className="rank" style={{ width: '100%', textAlign: 'left', cursor: 'pointer', background: p.id === sel ? 'rgba(224,85,99,.13)' : '', color: '#f6ecdd', border: p.id === sel ? '1px solid rgba(224,85,99,.5)' : '' }}>
-                <div className="avatar" style={{ background: p.avatarColor, width: 40, height: 40, fontSize: 14 }}>{p.name.split(' ').map(w => w[0]).slice(0, 2).join('')}</div>
+                <Avatar person={p} size={40} />
                 <div><b className="small">{p.name}</b><div className="small dim">top: {top ? `${nameOf(top.personId)?.name} · ${top.score}` : '—'}</div></div>
               </button>
             );

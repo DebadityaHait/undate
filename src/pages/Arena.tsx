@@ -80,7 +80,7 @@ export default function Arena() {
                 <b className="small">{m.fromName}: </b>{m.text}
               </div>
             ))}
-            {visible < lines.length && <div className="small dim">● agents talking… ({Math.min(visible, lines.length)}/{lines.length})</div>}
+            {visible < lines.length && <div className="small dim typing">agents talking <span><i /><i /><i /></span> ({Math.min(visible, lines.length)}/{lines.length})</div>}
           </div>
           {round === 2 && date.round2Verdict && visible >= lines.length && <div className="small" style={{ marginTop: 8 }}><span className="badge">{date.round2Verdict}</span></div>}
           <div className="small" style={{ marginTop: 8 }}>Highlights: {date.highlights.join(' · ')}</div>

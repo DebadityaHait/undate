@@ -37,9 +37,18 @@ npm run build   # static dist/ → deploy to Vercel/Netlify as-is
 No API keys needed. Everything runs client-side so the live site works when graders open it.
 
 ## Scrape stack (for the technical section)
-- **Primary: Microlink API (free, no key)** — `https://api.microlink.io?url=<linkedin|instagram>` returns OpenGraph title/description/image/author + insights. Works from the browser, no auth, CORS-open.
-- **Fallback: AllOrigins CORS proxy + manual OpenGraph parse** — fetch raw HTML via `https://api.allorigins.win/raw?url=…`, parse `og:title / og:description / og:image` with regex. Handles cases where Microlink is rate-limited.
-- **Last resort: manual paste** — LinkedIn/Instagram aggressively block bots (login walls, 429s). If both fetches fail, the UI shows the blocked proof and lets the user paste the *public* headline/bio text (still only from those two URLs). Demo data ships with cached public bios so the 25-person example runs instantly without hitting rate limits.
+
+**Browser (default, no keys — what the live site uses):**
+- **Primary: Microlink API (free, no key)** — `https://api.microlink.io?url=<linkedin|instagram>` returns OpenGraph title/description/image/author + insights. CORS-open, works from the browser.
+- **Fallback: AllOrigins CORS proxy + manual OpenGraph parse** — raw HTML via `https://api.allorigins.win/raw?url=…`, parse `og:title / og:description / og:image`.
+- **Last resort: manual paste** — LinkedIn/Instagram aggressively block bots (login walls, 429s). If both fetches fail, the UI shows the blocked proof and lets the user paste the *public* headline/bio text (still only from those two URLs).
+
+**Faces pipeline (guide-compliant, build-time — `scripts/fetch-avatars.mjs`):**
+- With `APIFY_TOKEN`: **Instagram** via `apify/instagram-profile-scraper` (`profile_pic_url_hd`, ~$1.60/1k profiles) + **LinkedIn** via `sabania/linkedin-scraper` (`profileImage`, no login, ~$3.00/1k). Run: `APIFY_TOKEN=xxx node scripts/fetch-avatars.mjs`.
+- Without a token (what we shipped): the same script pulls Microlink OG images + provider avatars — 15/25 real faces on the first run, committed to `public/avatars/`, manifest in `src/data/avatars.ts`. UI falls back to initials where no photo cleared.
+- Why build-time, not runtime: Instagram/Licdn CDN URLs expire and hotlinking breaks; committed files load instantly and never leak tokens. Re-run the script any time to refresh faces or onboard new people.
+
+**Imagery:** golden-hour Unsplash CDN photos (verified live before shipping, credited in-footer) for the moments strip; Newsreader + Outfit via Google Fonts.
 
 Why this stack: no secrets to leak, no server to run, graders can paste any public links and get a result. A production version would add a small server with Playwright + rotating residential proxies + authenticated `instaloader`/`linkedin-scraper` jobs, but that would break the "open the live site and try it" requirement.
 

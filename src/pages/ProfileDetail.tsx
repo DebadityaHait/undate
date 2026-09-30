@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { useStore, initials } from '../lib/store';
+import { useStore } from '../lib/store';
+import Avatar from '../components/Avatar';
 import { aiEnhanceProfile, getAI } from '../lib/ai';
 
 export default function ProfileDetail() {
@@ -28,7 +29,7 @@ export default function ProfileDetail() {
       <Link to="/profiles" className="small mut" style={{ textDecoration: 'none' }}>← the room</Link>
       <div style={{ display: 'grid', gridTemplateColumns: '1.1fr .9fr', gap: 16, marginTop: 12 }} className="resp">
         <div className="panel">
-          <div className="row"><div className="avatar" style={{ background: p.avatarColor, width: 64, height: 64, fontSize: 22 }}>{initials(p.name)}</div>
+          <div className="row"><Avatar person={p} size={64} ring />
             <div><h2 className="h2" style={{ margin: 0 }}>{p.name}, {p.age}</h2><div className="mut">{p.occupation} · {p.location}</div><div className="small dim">{pr.tagline}</div></div></div>
           <div style={{ marginTop: 8 }}>{pr.aiEnhanced ? <span className="badge">✦ AI-voiced</span> : <span className="badge plain">deterministic read</span>}</div>
           <div className="links"><a href={p.linkedinUrl} target="_blank" rel="noreferrer">LinkedIn — official ↗</a><a href={p.instagramUrl} target="_blank" rel="noreferrer">Instagram — public ↗</a></div>
