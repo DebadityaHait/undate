@@ -7,9 +7,15 @@ export interface PersonInput {
   occupation: string;
   linkedinUrl: string;
   instagramUrl: string;
-  linkedinBio?: string; // cached headline/about
-  instagramBio?: string; // cached bio
+  linkedinBio?: string;
+  instagramBio?: string;
   avatarColor?: string;
+}
+
+export interface Evidence {
+  tag: string;
+  source: 'linkedin' | 'instagram';
+  quote: string;
 }
 
 export interface AgentProfile {
@@ -28,29 +34,50 @@ export interface AgentProfile {
   dateIdeas: string[];
   linkedinSignals: string[];
   instagramSignals: string[];
+  evidence: Evidence[];
   confidence: number;
+  aiEnhanced?: boolean;
 }
 
 export interface ChatMessage {
-  from: string; // personId or 'system'
+  from: string;
   fromName: string;
   text: string;
   thinking?: string;
   ts: number;
 }
 
+export type DateStatus = 'first' | 'finalist' | 'introduced' | 'passed';
+
 export interface DateResult {
   id: string;
   aId: string;
   bId: string;
-  score: number; // 0-100
+  /** mutual score (avg of directional) — drives rankings */
+  score: number;
+  /** how much A likes B */
+  scoreAB: number;
+  /** how much B likes A */
+  scoreBA: number;
   chemistry: number;
   valuesFit: number;
   lifestyleFit: number;
   verdict: string;
+  asymmetry: string;
   highlights: string[];
   frictions: string[];
   transcript: ChatMessage[];
+  status: DateStatus;
+  round2?: ChatMessage[];
+  round2Verdict?: string;
+}
+
+export interface Introduction {
+  aId: string;
+  bId: string;
+  score: number;
+  dateId: string;
+  note: string;
 }
 
 export interface RankEntry {
@@ -58,4 +85,5 @@ export interface RankEntry {
   score: number;
   reason: string;
   dateId: string;
+  mutual?: boolean;
 }

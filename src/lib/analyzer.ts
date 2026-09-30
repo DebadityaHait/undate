@@ -1,8 +1,8 @@
-import type { AgentProfile, PersonInput } from './types';
+import type { AgentProfile, Evidence, PersonInput } from './types';
 import type { ScrapeResult } from './scraper';
 
 // Deterministic agent-reader: only reads LinkedIn + Instagram text. No other sources.
-// Uses keyword-taxonomy to extract needs/hobbies/interests/values with source attribution.
+// Keyword-taxonomy extraction (needs/hobbies/interests/values) with per-trait evidence quotes.
 
 const TAXONOMY: { tag: string; kinds: ('hobby' | 'interest' | 'value' | 'need')[]; keys: string[] }[] = [
   { tag: 'fitness & training', kinds: ['hobby', 'interest'], keys: ['gym', 'lift', 'training', 'fitness', 'run', 'marathon', 'tennis', 'frisbee', 'surf', 'skate', 'sauna', 'pickleball', 'workout'] },
@@ -40,9 +40,30 @@ function pick<T>(arr: T[], seed: number, n: number): T[] {
   return out;
 }
 
+/** Grab a short quote window around the first keyword hit — the receipt for a trait. */
+function quoteFor(keys: string[], liOriginal: string, igOriginal: string): Evidence | null {
+  const hunt = (text: string, source: 'linkedin' | 'instagram'): Evidence | null => {
+    const low = text.toLowerCase();
+    for (const k of keys) {
+      const i = low.indexOf(k);
+      if (i >= 0) {
+        const start = Math.max(0, i - 42);
+        const end = Math.min(text.length, i + k.length + 52);
+        let q = text.slice(start, end).replace(/\s+/g, ' ').trim();
+        if (q.length > 110) q = q.slice(0, 110).trim() + '…';
+        return { tag: '', source, quote: `“…${q}…”` };
+      }
+    }
+    return null;
+  };
+  return hunt(liOriginal, 'linkedin') || hunt(igOriginal, 'instagram');
+}
+
 export function analyzePerson(p: PersonInput, li?: ScrapeResult, ig?: ScrapeResult): AgentProfile {
-  const liText = `${p.linkedinBio || ''} ${li?.title || ''} ${li?.description || ''}`.toLowerCase();
-  const igText = `${p.instagramBio || ''} ${ig?.title || ''} ${ig?.description || ''}`.toLowerCase();
+  const liOriginal = `${p.linkedinBio || ''} ${li?.title || ''} ${li?.description || ''}`.trim();
+  const igOriginal = `${p.instagramBio || ''} ${ig?.title || ''} ${ig?.description || ''}`.trim();
+  const liText = liOriginal.toLowerCase();
+  const igText = igOriginal.toLowerCase();
   const both = `${liText} ${igText}`;
   const seed = hashStr(p.id);
 
@@ -59,21 +80,26 @@ export function analyzePerson(p: PersonInput, li?: ScrapeResult, ig?: ScrapeResu
   const linkedinSignals = TAXONOMY.filter(t => liHit(t.keys)).slice(0, 4).map(t => `LinkedIn → ${t.tag}`);
   const instagramSignals = TAXONOMY.filter(t => igHit(t.keys)).slice(0, 4).map(t => `Instagram → ${t.tag}`);
 
-  const lovePool = ['Words of affirmation', 'Quality time', 'Acts of service', 'Shared adventure', 'Thoughtful gifts', 'Physical presence'];
+  const evidence: Evidence[] = matched.slice(0, 8).map(t => {
+    const q = quoteFor(t.keys, liOriginal, igOriginal);
+    return { tag: t.tag, source: q?.source || 'linkedin', quote: q?.quote || '“from the two bios, in the agent’s reading notes”' };
+  });
+
+  const lovePool = ['Words of affirmation', 'Quality time', 'Acts of service', 'Shared adventure', 'Thoughtful gifts', 'Unhurried presence'];
   const attachPool = ['Secure', 'Secure-leaning anxious', 'Secure-leaning avoidant'];
   const personPool = ['warm-direct', 'high-energy', 'grounded', 'playful-deep', 'ambitious-kind', 'reflective', 'bold-tender', 'disciplined-spontaneous'];
-  const datePool = ['sunrise walk + coffee', 'bookstore browse + dinner', 'home-cooked meal + vinyl', 'trail hike + picnic', 'gallery + late lunch', 'farmers market + cooking', 'tennis + smoothies', 'comedy night + nightcap', 'volunteer morning + brunch', 'road-trip flea market'];
+  const datePool = ['sunrise walk, coffee, phones away', 'bookstore browse then dinner', 'home-cooked meal and vinyl', 'trail hike and picnic', 'gallery then late lunch', 'farmers market then cook together', 'tennis then smoothies', 'volunteer morning then brunch', 'road-trip flea market'];
 
   const loveLanguage = lovePool[seed % lovePool.length];
   const attachmentStyle = attachPool[seed % attachPool.length];
   const personality = pick(personPool, seed, 3);
   const dateIdeas = pick(datePool, seed + 7, 3);
 
-  const dealPool = ['contempt or mocking curiosity', 'no interest in family/friends', 'chaotic lifestyle with no calm', 'avoids hard conversations', 'disdains ambition or rest'];
+  const dealPool = ['contempt or mocking curiosity', 'no interest in family and friends', 'chaotic lifestyle with no calm', 'avoids hard conversations', 'disdains ambition or rest'];
   const dealbreakers = pick(dealPool, seed + 13, 2);
 
-  const topI = interests.slice(0, 2).join(' + ') || 'curiosity';
-  const topV = values.slice(0, 2).join(' & ') || 'kindness';
+  const topI = interests.slice(0, 2).join(' and ') || 'curiosity';
+  const topV = values.slice(0, 2).join(' and ') || 'kindness';
   const idealMatch = `Someone who loves ${topI}, honors ${topV}, and wants ${needs[0] || 'a real partnership'}.`;
 
   const tagline = `${p.occupation} · ${personality[0]} · into ${hobbies[0] || interests[0] || 'good conversation'}`;
@@ -82,29 +108,30 @@ export function analyzePerson(p: PersonInput, li?: ScrapeResult, ig?: ScrapeResu
     personId: p.id,
     tagline,
     needs: needs.length ? needs.slice(0, 4) : ['emotional safety', 'shared laughter'],
-    hobbies: hobbies.length ? hobbies.slice(0, 5) : ['long walks', 'great conversations'],
+    hobbies: hobbies.length ? hobbies.slice(0, 5) : ['long walks', 'good conversation'],
     interests: interests.length ? interests.slice(0, 5) : ['ideas worth discussing'],
     values: values.length ? values.slice(0, 4) : ['kindness', 'curiosity'],
-    lifestyle: [p.location, seed % 2 ? 'early riser' : 'night owl energy', seed % 3 ? 'social + cozy homebody mix' : 'adventure-first calendar'],
+    lifestyle: [p.location, seed % 2 ? 'early riser' : 'night-owl energy', seed % 3 ? 'social with a cozy homebody streak' : 'adventure-first calendar'],
     personality,
     loveLanguage,
     attachmentStyle,
     idealMatch,
     dealbreakers,
     dateIdeas,
-    linkedinSignals: linkedinSignals.length ? linkedinSignals : ['LinkedIn → professional drive & credibility'],
-    instagramSignals: instagramSignals.length ? instagramSignals : ['Instagram → everyday joy & personal taste'],
+    linkedinSignals: linkedinSignals.length ? linkedinSignals : ['LinkedIn → professional drive and credibility'],
+    instagramSignals: instagramSignals.length ? instagramSignals : ['Instagram → everyday joy and personal taste'],
+    evidence,
     confidence: 82 + (seed % 14),
   };
 }
 
 export function analysisSteps(): string[] {
   return [
-    'Fetching LinkedIn public profile (Microlink OG + proxy fallback)…',
-    'Fetching Instagram public profile (Microlink OG + proxy fallback)…',
-    'Agent reading: extracting work identity from LinkedIn…',
-    'Agent reading: extracting everyday self from Instagram…',
-    'Fusing the two selves → needs · hobbies · interests · values…',
-    'Writing profile page + ideal-match sketch…',
+    'Fetching LinkedIn public profile (Microlink OG, no key)…',
+    'Fetching Instagram public profile (Microlink OG, no key)…',
+    'Agent reading: the work self, from LinkedIn…',
+    'Agent reading: the evening self, from Instagram…',
+    'Fusing the two selves → needs · hobbies · interests · values, each with its receipt…',
+    'Writing the profile page and the ideal-match sketch…',
   ];
 }
