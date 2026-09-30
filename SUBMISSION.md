@@ -6,13 +6,13 @@ https://www.youtube.com/watch?v=REPLACE_WITH_UPLOAD
 → Title suggestion: "undate — 25 agents date each other (LinkedIn + Instagram only)"
 
 ## Demo link (same finished example, already run, no typing)
-https://undate-demo.vercel.app/
-→ Deploy: `vercel --prod` from this repo, or Netlify Drop of `dist/`.
+https://undate.vercel.app/
+→ Live production deploy, verified all routes 200.
 → This is the 25-person dataset pre-loaded. Graders look without typing.
 
 ## Live website (we open it, paste our own public links, and try it)
 https://undate.vercel.app/add
-→ Same deploy. The /add page is the try-it path: paste any LinkedIn + public Instagram → live scrape → profile → auto-dated against all 25 → rankings update.
+→ Same live deploy. The /add page is the try-it path: paste any LinkedIn + public Instagram → live scrape → profile → auto-dated against all 25 → rankings update.
 
 ## GitHub URL (must be public)
 https://github.com/DebadityaHait/undate
